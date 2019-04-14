@@ -156,11 +156,8 @@ resource "google_compute_firewall" "default" {
     ports    = ["80"]
   }
 
-  source_ranges = ["${data.google_compute_lb_ip_ranges.ranges.network}"]
-  //source_ranges = ["${google_compute_instance.www.network_interface.0.network_ip}/32","${google_compute_instance.www-video.network_interface.0.network_ip}/32"]
-  //source_ranges = ["0.0.0.0/0"]
-  //source_ranges = ["130.211.0.0/22", "35.191.0.0/16","35.201.90.0/24"]
-
-  //source_tags   = ["http-tag"]
+  source_ranges = ["${data.google_compute_lb_ip_ranges.ranges.http_ssl_tcp_internal}"] // The IP ranges used for health checks when HTTP(S), SSL proxy, TCP proxy, and Internal load balancing is used
+  //source_ranges = ["130.211.0.0/22", "35.191.0.0/16"]
+  //source_ranges = ["${data.google_compute_lb_ip_ranges.ranges.network}"] // FOR NETWORK_LOAD_BALANCER
   target_tags   = ["http-tag"]
 }
