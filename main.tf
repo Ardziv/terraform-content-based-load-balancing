@@ -145,6 +145,8 @@ resource "google_compute_global_forwarding_rule" "default" {
   port_range = "80"
 }
 
+data "google_compute_lb_ip_ranges" "ranges" {}
+
 resource "google_compute_firewall" "default" {
   name    = "tf-www-firewall-allow-internal-only"
   network = "default"
@@ -154,6 +156,11 @@ resource "google_compute_firewall" "default" {
     ports    = ["80"]
   }
 
-  source_ranges = ["130.211.0.0/22", "35.191.0.0/16"]
+  source_ranges = ["${data.google_compute_lb_ip_ranges.ranges.network}"]
+  //source_ranges = ["${google_compute_instance.www.network_interface.0.network_ip}/32","${google_compute_instance.www-video.network_interface.0.network_ip}/32"]
+  //source_ranges = ["0.0.0.0/0"]
+  //source_ranges = ["130.211.0.0/22", "35.191.0.0/16","35.201.90.0/24"]
+
+  //source_tags   = ["http-tag"]
   target_tags   = ["http-tag"]
 }
