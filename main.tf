@@ -2,11 +2,12 @@
 
 provider "google" {
   region      = "${var.region}"
-  project     = "${var.project_name}"
+  project     = "${var.project_id}"
   // credentials = "${file("${var.credentials_file_path}")}"
   zone        = "${var.region_zone}"
 }
 
+/* INSTANCES (WWW/VIDEO) */
 resource "google_compute_instance" "www" {
   name         = "tf-www-compute"
   machine_type = "f1-micro"
@@ -58,11 +59,15 @@ resource "google_compute_instance" "www-video" {
     scopes = ["https://www.googleapis.com/auth/compute.readonly"]
   }
 }
+/* INSTANCES (WWW/VIDEO) */
 
+/* GLOBAL ADDRESS (LB IP) */
 resource "google_compute_global_address" "external-address" {
   name = "tf-external-address"
 }
+/* GLOBAL ADDRESS (LB IP) */
 
+/* INSTANCE GROUP */
 resource "google_compute_instance_group" "www-resources" {
   name = "tf-www-resources"
 
@@ -85,12 +90,17 @@ resource "google_compute_instance_group" "video-resources" {
   }
 }
 
+/* INSTANCE GROUP */
+
+/* HEALTH CHECK */
 resource "google_compute_health_check" "health-check" {
   name = "tf-health-check"
 
   http_health_check {}
 }
+/* HEALTH CHECK */
 
+/* BACKEND-SERVICES (WWW/VIDEO) */
 resource "google_compute_backend_service" "www-service" {
   name     = "tf-www-service"
   protocol = "HTTP"
@@ -112,7 +122,9 @@ resource "google_compute_backend_service" "video-service" {
 
   health_checks = ["${google_compute_health_check.health-check.self_link}"]
 }
+/* BACKEND-SERVICES (WWW/VIDEO) */
 
+/* URL-MAP */
 resource "google_compute_url_map" "web-map" {
   name            = "tf-web-map"
   default_service = "${google_compute_backend_service.www-service.self_link}"
@@ -130,9 +142,47 @@ resource "google_compute_url_map" "web-map" {
       paths   = ["/video", "/video/*"]
       service = "${google_compute_backend_service.video-service.self_link}"
     }
+
+    path_rule {
+      paths   = ["/static", "/static/*"]
+      service = "${google_compute_backend_bucket.static_backend.self_link}"
+    }
   }
 }
 
+/* URL-MAP */
+
+/* FRONTEND & BACKEND BUCKET & ACL */
+resource "google_compute_backend_bucket" "static_backend" {
+	name = "${var.backend_bucket_name}"
+	bucket_name = "${google_storage_bucket.bucket.name}"
+	enable_cdn = false
+}
+
+resource "google_storage_bucket" "bucket" {
+    name = "${var.bucket_name}"
+    location = "${var.bucket_location}"
+    project = "${var.project_id}"
+    storage_class = "${var.bucket_storage_class}"
+
+    versioning {
+        enabled = "${var.bucket_versioning}"
+    }
+
+    website {
+        main_page_suffix = "${var.main_page_suffix}"
+        not_found_page = "${var.not_found_page}"
+    }
+}
+
+resource "google_storage_default_object_acl" "default_obj_acl" {
+    bucket = "${google_storage_bucket.bucket.name}"
+    role_entity = ["${var.role_entity}"]
+
+}
+/* FRONTEND & BACKEND BUCKET & ACL */
+
+/* HTTP PROXY */
 resource "google_compute_target_http_proxy" "http-lb-proxy" {
   name    = "tf-http-lb-proxy"
   url_map = "${google_compute_url_map.web-map.self_link}"
@@ -161,3 +211,4 @@ resource "google_compute_firewall" "default" {
   //source_ranges = ["${data.google_compute_lb_ip_ranges.ranges.network}"] // FOR NETWORK_LOAD_BALANCER
   target_tags   = ["http-tag"]
 }
+/* HTTP PROXY */
