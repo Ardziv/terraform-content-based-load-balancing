@@ -38,7 +38,7 @@ terraform apply \
 	-var="credentials_file_path=~/.gcloud/Terraform.json" \
 ```
 
-Or save all your variable into a file `my-project-id-123.auto.tfvars` and call it like this:
+Or save all your variable into a copy of the file `terraform.tfvars.example` (i.e. `my-project-id-123.auto.tfvars`) and call it like this:
 
 ```
 terraform apply -auto-approve
