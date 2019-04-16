@@ -5,19 +5,23 @@ path in the request URL. It is based on the tutorial at [https://cloud.google.co
 
 To start, [download your credentials from Google Cloud Console](https://www.terraform.io/docs/providers/google/#credentials); suggested path for downloaded file is `~/.gcloud/Terraform.json`.
 
-Optionally update `variables.tf` to specify a default value for the `project_name` variable, and check other variables.
+Optionally update `variables.tf` to specify a default value for the `project_id` variable, and check other variables.
 
 After you run `terraform apply` on this configuration, it will
 automatically output the public IP address of the load balancer.
-After your instance registers, the LB should respond with the following at its root:
+After your instance registers, the LB should respond with the following at its root: (using a service compute instance)
 
 ```html
 <h1>www</h1>
 ```
 
-And the following at the /video/ url:
+And the following at the /video/ url: (using a service compute instance)
 ```html
 <h1>www-video</h1>
+```
+And the following at the /static/ url: (using a backend bucket)
+```html
+<h1>WELCOME TO STATIC WEBSITE<h1>
 ```
 
 To run, configure your Google Cloud provider as described in
@@ -28,8 +32,14 @@ Run with a command like this:
 
 ```
 terraform apply \
-	-var="region=us-central1" \
-	-var="region_zone=us-central1-f" \
-	-var="project_name=my-project-id-123" \
+	-var="region=asia-east2" \
+	-var="region_zone=asia-east2-a" \
+	-var="project_id=my-project-id-123" \
 	-var="credentials_file_path=~/.gcloud/Terraform.json" \
+```
+
+Or save all your variable into a file `my-project-id-123.auto.tfvars` and call it like this:
+
+```
+terraform apply -auto-approve
 ```
